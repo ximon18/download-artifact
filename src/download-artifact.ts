@@ -41,20 +41,23 @@ async function run(): Promise<void> {
         createArtifactFolder: false
       }
       const sleep = (ms) => new Promise(r => setTimeout(r, ms))
-      try {
-        const downloadResponse = await artifactClient.downloadArtifact(
-          name,
-          resolvedPath,
-          downloadOptions
-        )
-        core.info(
-          `Artifact ${downloadResponse.artifactName} was downloaded to ${downloadResponse.downloadPath}`
-        )
-      } catch (err) {
-        core.info(
-          `Artifact ${downloadResponse.artifactName} download failed, retrying`
-        )
-        await sleep(30000)
+      for (var i: number = 1; i <= 10; i++) {
+        try {
+          const downloadResponse = await artifactClient.downloadArtifact(
+            name,
+            resolvedPath,
+            downloadOptions
+          )
+          core.info(
+            `Artifact ${downloadResponse.artifactName} was downloaded to ${downloadResponse.downloadPath}`
+          )
+          break
+        } catch (err) {
+          core.info(
+            `Artifact ${downloadResponse.artifactName} download failed, retrying`
+          )
+          await sleep(30000)
+        }
       }
     }
     // output the directory that the artifact(s) was/were downloaded to
