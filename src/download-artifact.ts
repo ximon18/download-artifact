@@ -40,27 +40,27 @@ async function run(): Promise<void> {
       const downloadOptions = {
         createArtifactFolder: false
       }
-    //   const sleep = (ms) => new Promise(r => setTimeout(r, ms))
-    //   for (var i: number = 1; i <= 10; i++) {
-    //     core.info('Attempt ${i}/10')
-    //     try {
-    //       const downloadResponse = await artifactClient.downloadArtifact(
-    //         name,
-    //         resolvedPath,
-    //         downloadOptions
-    //       )
-    //       core.info(
-    //         `Artifact ${downloadResponse.artifactName} was downloaded to ${downloadResponse.downloadPath}`
-    //       )
-    //       break
-    //     } catch (err) {
-    //       core.info(
-    //         `Artifact ${name} download failed, retrying: ${err.message}`
-    //       )
-    //     }
-    //     await sleep(30000)
-    //   }
-    // }
+      const sleep = (ms) => new Promise(r => setTimeout(r, ms))
+      for (var i: number = 1; i <= 10; i++) {
+        core.info('Attempt ${i}/10')
+        try {
+          const downloadResponse = await artifactClient.downloadArtifact(
+            name,
+            resolvedPath,
+            downloadOptions
+          )
+          core.info(
+            `Artifact ${downloadResponse.artifactName} was downloaded to ${downloadResponse.downloadPath}`
+          )
+          break
+        } catch (err) {
+          core.info(
+            `Artifact ${name} download failed, retrying: ${err.message}`
+          )
+        }
+        await sleep(30000)
+      }
+    }
     // output the directory that the artifact(s) was/were downloaded to
     // if no path is provided, an empty string resolves to the current working directory
     core.setOutput(Outputs.DownloadPath, resolvedPath)

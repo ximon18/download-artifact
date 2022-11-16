@@ -9894,8 +9894,19 @@ function run() {
                 const downloadOptions = {
                     createArtifactFolder: false
                 };
-                const downloadResponse = yield artifactClient.downloadArtifact(name, resolvedPath, downloadOptions);
-                core.info(`Artifact ${downloadResponse.artifactName} was downloaded to ${downloadResponse.downloadPath}`);
+                const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+                for (var i = 1; i <= 10; i++) {
+                    core.info('Attempt ${i}/10');
+                    try {
+                        const downloadResponse = yield artifactClient.downloadArtifact(name, resolvedPath, downloadOptions);
+                        core.info(`Artifact ${downloadResponse.artifactName} was downloaded to ${downloadResponse.downloadPath}`);
+                        break;
+                    }
+                    catch (err) {
+                        core.info(`Artifact ${name} download failed, retrying: ${err.message}`);
+                    }
+                    yield sleep(30000);
+                }
             }
             // output the directory that the artifact(s) was/were downloaded to
             // if no path is provided, an empty string resolves to the current working directory
