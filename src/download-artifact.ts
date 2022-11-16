@@ -42,6 +42,7 @@ async function run(): Promise<void> {
       }
       const sleep = (ms) => new Promise(r => setTimeout(r, ms))
       for (var i: number = 1; i <= 10; i++) {
+        core.info('Attempt ${i}/10')
         try {
           const downloadResponse = await artifactClient.downloadArtifact(
             name,
@@ -56,8 +57,8 @@ async function run(): Promise<void> {
           core.info(
             `Artifact ${name} download failed, retrying: ${err.message}`
           )
-          await sleep(30000)
         }
+        await sleep(30000)
       }
     }
     // output the directory that the artifact(s) was/were downloaded to
