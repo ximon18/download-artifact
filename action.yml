@@ -8,6 +8,14 @@ inputs:
   path:
     description: 'Destination path'
     required: false
+  maxTries:
+    description: 'The integer number of times to try downloading a single artifact (requires `name`)'
+    required: false
+    default: '1'
+  retryDelayMs:
+    description: 'The integer number of milliseconds to wait after a failed download attempt before retrying (requires `name`)'
+    required: false
+    default: '60000'
 runs:
   using: 'node16'
   main: 'dist/index.js'

@@ -9827,6 +9827,8 @@ var Inputs;
 (function (Inputs) {
     Inputs["Name"] = "name";
     Inputs["Path"] = "path";
+    Inputs["MaxTries"] = "maxTries";
+    Inputs["RetryDelayMs"] = "retryDelayMs";
 })(Inputs = exports.Inputs || (exports.Inputs = {}));
 var Outputs;
 (function (Outputs) {
@@ -9868,6 +9870,8 @@ function run() {
         try {
             const name = core.getInput(constants_1.Inputs.Name, { required: false });
             const path = core.getInput(constants_1.Inputs.Path, { required: false });
+            const maxTries = parseInt(core.getInput(constants_1.Inputs.MaxTries, { required: false }));
+            const retryDelayMs = parseInt(core.getInput(constants_1.Inputs.RetryDelayMs, { required: false }));
             let resolvedPath;
             // resolve tilde expansions, path.replace only replaces the first occurrence of a pattern
             if (path.startsWith(`~`)) {
@@ -9895,8 +9899,8 @@ function run() {
                     createArtifactFolder: false
                 };
                 const sleep = (ms) => new Promise(r => setTimeout(r, ms));
-                for (var i = 1; i <= 10; i++) {
-                    core.info('Attempt ${i}/10');
+                for (var i = 1; i <= maxTries; i++) {
+                    core.debug(`Artifact ${name} download attempt ${i}/10`);
                     try {
                         const downloadResponse = yield artifactClient.downloadArtifact(name, resolvedPath, downloadOptions);
                         core.info(`Artifact ${downloadResponse.artifactName} was downloaded to ${downloadResponse.downloadPath}`);
@@ -9905,7 +9909,7 @@ function run() {
                     catch (err) {
                         core.info(`Artifact ${name} download failed, retrying: ${err.message}`);
                     }
-                    yield sleep(30000);
+                    yield sleep(retryDelayMs);
                 }
             }
             // output the directory that the artifact(s) was/were downloaded to

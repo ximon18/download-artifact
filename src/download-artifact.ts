@@ -8,6 +8,8 @@ async function run(): Promise<void> {
   try {
     const name = core.getInput(Inputs.Name, {required: false})
     const path = core.getInput(Inputs.Path, {required: false})
+    const maxTries = parseInt(core.getInput(Inputs.MaxTries, {required: false}))
+    const retryDelayMs = parseInt(core.getInput(Inputs.RetryDelayMs, {required: false}))
 
     let resolvedPath
     // resolve tilde expansions, path.replace only replaces the first occurrence of a pattern
@@ -41,8 +43,8 @@ async function run(): Promise<void> {
         createArtifactFolder: false
       }
       const sleep = (ms) => new Promise(r => setTimeout(r, ms))
-      for (var i: number = 1; i <= 10; i++) {
-        core.info('Attempt ${i}/10')
+      for (var i: number = 1; i <= maxTries; i++) {
+        core.debug(`Artifact ${name} download attempt ${i}/10`)
         try {
           const downloadResponse = await artifactClient.downloadArtifact(
             name,
@@ -58,7 +60,7 @@ async function run(): Promise<void> {
             `Artifact ${name} download failed, retrying: ${err.message}`
           )
         }
-        await sleep(30000)
+        await sleep(retryDelayMs)
       }
     }
     // output the directory that the artifact(s) was/were downloaded to
