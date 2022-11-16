@@ -22,7 +22,7 @@ steps:
     retryDelayMs: 60000
 ```
 
-If `maxTries` is not specified or is <= 1 the behaviour is the same as the original action.
+If `maxTries` is not specified the behaviour is the same as the original action.
 
 When `maxTries` > 1 this forked action will wait `retryDelayMs` milliseconds after failing to download the single artifact and will then retry upto `maxTries` times.
 
