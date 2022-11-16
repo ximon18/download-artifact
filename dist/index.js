@@ -9827,6 +9827,8 @@ var Inputs;
 (function (Inputs) {
     Inputs["Name"] = "name";
     Inputs["Path"] = "path";
+    Inputs["MaxTries"] = "maxTries";
+    Inputs["RetryDelayMs"] = "retryDelayMs";
 })(Inputs = exports.Inputs || (exports.Inputs = {}));
 var Outputs;
 (function (Outputs) {
@@ -9868,6 +9870,8 @@ function run() {
         try {
             const name = core.getInput(constants_1.Inputs.Name, { required: false });
             const path = core.getInput(constants_1.Inputs.Path, { required: false });
+            const maxTries = parseInt(core.getInput(constants_1.Inputs.MaxTries, { required: false }));
+            const retryDelayMs = parseInt(core.getInput(constants_1.Inputs.RetryDelayMs, { required: false }));
             let resolvedPath;
             // resolve tilde expansions, path.replace only replaces the first occurrence of a pattern
             if (path.startsWith(`~`)) {
@@ -9890,12 +9894,29 @@ function run() {
             }
             else {
                 // download a single artifact
+                const sleep = (ms) => new Promise(r => setTimeout(r, ms));
                 core.info(`Starting download for ${name}`);
                 const downloadOptions = {
                     createArtifactFolder: false
                 };
-                const downloadResponse = yield artifactClient.downloadArtifact(name, resolvedPath, downloadOptions);
-                core.info(`Artifact ${downloadResponse.artifactName} was downloaded to ${downloadResponse.downloadPath}`);
+                let downloaded = false;
+                for (var i = 1; i <= maxTries; i++) {
+                    core.debug(`Artifact ${name} download attempt ${i}/${maxTries}`);
+                    try {
+                        const downloadResponse = yield artifactClient.downloadArtifact(name, resolvedPath, downloadOptions);
+                        core.info(`Artifact ${downloadResponse.artifactName} was downloaded to ${downloadResponse.downloadPath}`);
+                        downloaded = true;
+                        break;
+                    }
+                    catch (err) {
+                        core.info(`Artifact ${name} download failed, will retry in ${retryDelayMs}ms: ${err.message}`);
+                    }
+                    yield sleep(retryDelayMs);
+                }
+                if (!downloaded) {
+                    core.setFailed(`Artifact ${name} could not be downloaded after ${maxTries} attempts`);
+                    return;
+                }
             }
             // output the directory that the artifact(s) was/were downloaded to
             // if no path is provided, an empty string resolves to the current working directory

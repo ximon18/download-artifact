@@ -8,6 +8,8 @@ async function run(): Promise<void> {
   try {
     const name = core.getInput(Inputs.Name, {required: false})
     const path = core.getInput(Inputs.Path, {required: false})
+    const maxTries = parseInt(core.getInput(Inputs.MaxTries, {required: false}))
+    const retryDelayMs = parseInt(core.getInput(Inputs.RetryDelayMs, {required: false}))
 
     let resolvedPath
     // resolve tilde expansions, path.replace only replaces the first occurrence of a pattern
@@ -36,19 +38,42 @@ async function run(): Promise<void> {
       }
     } else {
       // download a single artifact
+      const sleep = (ms) => new Promise(r => setTimeout(r, ms))
+      
       core.info(`Starting download for ${name}`)
       const downloadOptions = {
         createArtifactFolder: false
       }
-      const downloadResponse = await artifactClient.downloadArtifact(
-        name,
-        resolvedPath,
-        downloadOptions
-      )
-      core.info(
-        `Artifact ${downloadResponse.artifactName} was downloaded to ${downloadResponse.downloadPath}`
-      )
+
+      let downloaded = false
+
+      for (var i: number = 1; i <= maxTries; i++) {
+        core.debug(`Artifact ${name} download attempt ${i}/${maxTries}`)
+        try {
+          const downloadResponse = await artifactClient.downloadArtifact(
+            name,
+            resolvedPath,
+            downloadOptions
+          )
+          core.info(
+            `Artifact ${downloadResponse.artifactName} was downloaded to ${downloadResponse.downloadPath}`
+          )
+          downloaded = true
+          break
+        } catch (err) {
+          core.info(
+            `Artifact ${name} download failed, will retry in ${retryDelayMs}ms: ${err.message}`
+          )
+        }
+        await sleep(retryDelayMs)
+      }
+
+      if (!downloaded) {
+        core.setFailed(`Artifact ${name} could not be downloaded after ${maxTries} attempts`)
+        return
+      }
     }
+
     // output the directory that the artifact(s) was/were downloaded to
     // if no path is provided, an empty string resolves to the current working directory
     core.setOutput(Outputs.DownloadPath, resolvedPath)
