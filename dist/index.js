@@ -9894,22 +9894,28 @@ function run() {
             }
             else {
                 // download a single artifact
+                const sleep = (ms) => new Promise(r => setTimeout(r, ms));
                 core.info(`Starting download for ${name}`);
                 const downloadOptions = {
                     createArtifactFolder: false
                 };
-                const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+                let downloaded = false;
                 for (var i = 1; i <= maxTries; i++) {
-                    core.debug(`Artifact ${name} download attempt ${i}/10`);
+                    core.debug(`Artifact ${name} download attempt ${i}/${maxTries}`);
                     try {
                         const downloadResponse = yield artifactClient.downloadArtifact(name, resolvedPath, downloadOptions);
                         core.info(`Artifact ${downloadResponse.artifactName} was downloaded to ${downloadResponse.downloadPath}`);
+                        downloaded = true;
                         break;
                     }
                     catch (err) {
-                        core.info(`Artifact ${name} download failed, retrying: ${err.message}`);
+                        core.info(`Artifact ${name} download failed, will retry in ${retryDelayMs}ms: ${err.message}`);
                     }
                     yield sleep(retryDelayMs);
+                }
+                if (!downloaded) {
+                    core.setFailed(`Artifact ${name} could not be downloaded after ${maxTries} attempts`);
+                    return;
                 }
             }
             // output the directory that the artifact(s) was/were downloaded to
