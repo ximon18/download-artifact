@@ -54,7 +54,7 @@ async function run(): Promise<void> {
           break
         } catch (err) {
           core.info(
-            `Artifact ${downloadResponse.artifactName} download failed, retrying`
+            `Artifact ${name} download failed, retrying: ${err.message}`
           )
           await sleep(30000)
         }
